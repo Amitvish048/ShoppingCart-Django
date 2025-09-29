@@ -29,7 +29,13 @@
 							</div>
 							<figcaption class="info">
 								<a href="{{ cart_item.product.get_url }}" class="title text-dark">{{ cart_item.product.product_name }}</a>
-								<p class="text-muted small">Matrix: 25 Mpx <br> Brand: Canon</p>
+								<p class="text-muted small">
+									{% if cart_item.variations.all %}
+										{% for item in cart_item.variations.all %}
+											{{ item.variation_category | capfirst }} : {{ item.variation_value | capfirst }} <br>
+										{% endfor %}
+									{% endif %}
+								</p>
 							</figcaption>
 						</figure>
 					</td>
@@ -37,15 +43,20 @@
 						<div class="col"> 
 							<div class="input-group input-spinner">
 								<div class="input-group-prepend">
-									<a href="{% url 'remove_cart' cart_item.product.id %}" class="btn btn-light">
+									<a href="{% url 'remove_cart' cart_item.product.id cart_item.id %}" class="btn btn-light">
 										<i class="fa fa-minus"></i>
 									</a>
 								</div>
 								<input type="text" class="form-control" value="{{ cart_item.quantity }}">
 								<div class="input-group-append">
-									<a href="{% url 'add_cart' cart_item.product.id %}" class="btn btn-light">
-										<i class="fa fa-plus"></i>
-									</a>
+									<form action="{% url 'add_cart' cart_item.product.id %}" method="POST">
+										{% csrf_token %}
+										{% for cart_item in cart_item.variations.all %}
+										<input type="hidden" name="{{ cart_item.variation_category | lower }}" value="{{ cart_item.variation_value | capfirst }}">
+										{% endfor %}
+										<button type="submit" class="btn btn-light"><i class="fa fa-plus"></i></button>
+
+								</form>
 								</div>
 							</div>
 						</div>
@@ -57,7 +68,7 @@
 						</div>
 					</td>
 					<td class="text-right"> 
-						<a href="{% url 'remove_cart_item' cart_item.product.id %}" class="btn btn-danger">Remove</a>
+						<a href="{% url 'remove_cart_item' cart_item.product.id cart_item.id %}" onclick="return confirm('Are your sure to deleting this item ?')" class="btn btn-danger">Remove</a>
 					</td>
 				</tr>
 				{% endfor %}
