@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<section class="section-content padding-y bg">
+<div class="container">
+
+<h4 class="text-center mb-10">Review Your Order and Make Payment</h4>
+<div class="row">
+
+    <!-- Cart Items List -->
+    <aside class="col-lg-8">
+        <!-- Billing Address -->
+        <div class="card mb-3">
+            <h5 class="card-header">Billing Address</h5>
+            <div class="card-body">
+                <p>{{ order.full_name }}</p>
+                <p>{{ order.full_address }}</p>
+                <p>{{ order.city }}, {{ order.state }}</p>
+                <p>{{ order.country }}</p>
+                <p>{{ order.email }}</p>
+                <p>{{ order.phone }}</p>
+                {% if order.order_note %}
+                    <b>Order Note:</b> {{ order.order_note }}
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Product Review -->
+        <div class="card">
+            <h5 class="card-header">Review Products</h5>
+            <div class="card-body">
+                <table class="table table-borderless table-shopping-cart">
+                    <thead>
+                        <tr>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in cart_items %}
+                        <tr>
+                            <td>
+                                <figure class="itemside align-items-center">
+                                    <div class="aside">
+                                        <img src="{{ item.product.images.url }}" class="img-sm">
+                                    </div>
+                                    <figcaption class="info">
+                                        <a href="{{ item.product.get_url }}" class="title text-dark">
+                                            {{ item.product.product_name }}
+                                        </a>
+                                        {% if item.variations.all %}
+                                            {% for v in item.variations.all %}
+                                                <p class="small">{{ v.variation_category|capfirst }}: {{ v.variation_value|capfirst }}</p>
+                                            {% endfor %}
+                                        {% endif %}
+                                    </figcaption>
+                                </figure>
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td>{{ item.sub_price }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Cart Summary & Payment -->
+    <aside class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <dl class="dlist-align">
+                    <dt>Total price:</dt>
+                    <dd class="text-right">{{ total }}</dd>
+                </dl>
+                <dl class="dlist-align">
+                    <dt>Tax:</dt>
+                    <dd class="text-right">{{ tax }}</dd>
+                </dl>
+                <dl class="dlist-align">
+                    <dt>Total:</dt>
+                    <dd class="text-right"><strong>{{ grand_total }}</strong></dd>
+                </dl>
+                <hr>
+                <p class="text-center mb-3">
+                    <img src="{% static 'images/misc/payments.png' %}" height="26">
+                </p>
+
+                <!-- Razorpay Button -->
+                <button id="rzp-button1" class="btn btn-primary btn-block">
+                    Pay ₹{{ grand_total|floatformat:2 }}
+                </button>
+            </div>
+        </div>
+    </aside>
+</div>
+</div>
+</section>
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<!-- <script>
+    var options = {
+        "key": "{{ razorpay_key }}",                  // Razorpay Test Key from backend
+        "amount": "{{ amount }}",                     // Amount in paise (grand_total * 100)
+        "currency": "INR",
+        "name": "My Test Shop",
+        "description": "Order Payment",
+        "order_id": "{{ razorpay_order_id }}",       // Razorpay Order ID from backend
+        "handler": function (response) {
+            console.log("✅ Razorpay Payment Response:", response);
+
+            // Redirect to Django backend to verify payment and save in DB
+            // window.location.href = `payments/?order_id=${response.razorpay_order_id}&payment_id=${response.razorpay_payment_id}&signature=${response.razorpay_signature}`;
+        },
+        "prefill": {
+            "name": "{{ order.full_name }}",
+            "email": "{{ order.email }}",
+            "contact": "{{ order.phone }}"
+        },
+        "notes": {
+            "order_number": "{{ order.order_number }}"
+        },
+        "theme": {
+            "color": "#3399cc"
+        }
+    };
+
+    var rzp1 = new Razorpay(options);
+
+    document.getElementById('rzp-button1').onclick = function(e){
+        rzp1.open();
+        e.preventDefault();
+    }
+</script> -->
+
+
+
+<script>
+var options = {
+    "key": "{{ razorpay_key }}",                  // Razorpay Test Key
+    "amount": "{{ amount }}",                     // Amount in paise
+    "currency": "INR",
+    "name": "My Test Shop",
+    "description": "Order Payment",
+    "order_id": "{{ razorpay_order_id }}",       // Razorpay Order ID
+    "handler": function (response) {
+        console.log("✅ Razorpay Payment Response:", response);
+
+        // Send payment data to Django via POST
+        fetch("{% url 'payments' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                order_number: "{{ order.order_number }}",   
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                amount_paid: "{{ order.order_total }}"
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success'){
+                let order_number = data.order_number;
+                let razorpay_payment_id = data.razorpay_payment_id;
+                console.log(data.order_number); 
+                alert('Payment successful!');
+                window.location.href = `/orders/order_complete/?order_number=${order_number}&razorpay_payment_id=${razorpay_payment_id}`; // redirect to thank you page
+            } else {
+                alert('Payment verification failed!');
+            }
+        })
+        .catch(err => console.error(err));
+    },
+    "prefill": {
+        "name": "{{ order.full_name }}",
+        "email": "{{ order.email }}",
+        "contact": "{{ order.phone }}"
+    },
+    "notes": {
+        "order_number": "{{ order.order_number }}"
+    },
+    "theme": {
+        "color": "#3399cc"
+    }
+};
+
+var rzp1 = new Razorpay(options);
+document.getElementById('rzp-button1').onclick = function(e){
+    rzp1.open();
+    e.preventDefault();
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,24 @@
+{% autoescape off %}
+
+Hi {{ user.first_name }},
+
+YOUR ORDER HAS BEEN RECEIVED.
+
+Order Number: {{ order.order_number }}
+
+Products Ordered:
+{% for item in order_products %}
+  -{{ item.product.product_name }}
+
+    {% if item.variation %}
+    ({{ item.variation.variation_category|capfirst }}: {{ item.variation.variation_value|capfirst }})
+    {% endif %}
+    Quantity: {{ item.quantity }}
+    Price: ₹{{ item.product_price }}
+{% endfor %}
+
+Total Amount: ₹{{ order.order_total }}
+
+Thank you for shopping with us!
+
+{% endautoescape %}

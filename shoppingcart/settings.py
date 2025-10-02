@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'category',
     'accounts',
     'store',
-    'carts'
+    'carts',
+    'orders',
 ]
 
 MIDDLEWARE = [
@@ -155,3 +156,13 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'digitamit048@gmail.com'
 EMAIL_HOST_PASSWORD = 'agvsnxpxauxftkwa'
 EMAIL_USE_TLS = True
+
+
+#payment gateway
+
+RAZORPAY_KEY_ID = "rzp_test_ROHicChejcCpgy"
+RAZORPAY_KEY_SECRET = "fgGbf22paqOUP6a2cOT9njYr"
+
+
+
+
