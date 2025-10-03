@@ -277,5 +277,38 @@ def place_order(request, total=0, quantity=0):
 
 def order_complete(request):
 
+    order_number = request.GET.get('order_number')
+    razorpay_payment_id = request.GET.get('razorpay_payment_id')
 
-    return render(request,'orders/order_complete.html')
+    try:
+        order = Order.objects.get(order_number=order_number,is_ordered=True)
+
+        ordered_product = OrderProduct.objects.filter(order=order)
+
+        subtotal = 0
+        for i in ordered_product:
+            subtotal += i.product_price * i.quantity
+
+
+
+        payment = Payment.objects.get(payment_id=razorpay_payment_id)
+
+        context = {
+            'order':order,  
+            'ordered_product':ordered_product,
+            'order_number':order.order_number,
+            'razorpay_payment_id':payment.payment_id,
+            'payment':payment,
+            'subtotal':subtotal,
+
+
+        }
+
+        return render(request,'orders/order_complete.html',context)
+    
+    except(Payment.DoesNotExist, Order.DoesNotExist):
+
+        return redirect('home')
+
+
+    

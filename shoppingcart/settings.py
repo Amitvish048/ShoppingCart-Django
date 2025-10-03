@@ -124,16 +124,32 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 
+# STATIC_URL = '/static/'
+# STATIC_ROOT = BASE_DIR / 'static'
+
+
+# STATICFILES_DIRS = [
+#     'shoppingcart/static',
+# ]
+
+# MEDIA_FILES = '/media/'
+# MEDIA_ROOT = BASE_DIR / 'media'
+
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'static'
 
+# For development: do not point STATIC_ROOT to your static folder
+# STATIC_ROOT is only used when running collectstatic
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Tell Django where to look for static files in development
 STATICFILES_DIRS = [
-    'shoppingcart/static',
+    BASE_DIR / 'static',   # this is shoppingcart/static
 ]
 
-MEDIA_FILES = '/media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
